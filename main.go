@@ -111,7 +111,7 @@ func report(ctx context.Context, wg *sync.WaitGroup) {
 			time.Sleep(10 * time.Second)
 			fmt.Print("\033[H\033[2J")
 			mtx.Lock()
-			tbl := table.New("URL", "Success rate (%)", "# of requests")
+			tbl := table.New("URL", "Success (%)", "Requests", "|", "URL", "Success (%)", "Requests")
 
 			keys := make([]string, 0)
 			for k := range success {
@@ -119,10 +119,16 @@ func report(ctx context.Context, wg *sync.WaitGroup) {
 			}
 			sort.Strings(keys)
 
-			for _, k := range keys {
-				total := success[k] + fail[k]
-				rate := fmt.Sprintf("%.2f", 100.0*float64(success[k])/float64(total))
-				tbl.AddRow(k, rate, total)
+			for i := 0; i < len(keys); i += 2 {
+				total1 := success[keys[i]] + fail[keys[i]]
+				rate1 := fmt.Sprintf("%.2f", 100.0*float64(success[keys[i]])/float64(total1))
+				if i + 1 == len(keys) {
+					tbl.AddRow(keys[i], rate1, total1, "|", "", "", "")
+					continue
+				}
+				total2 := success[keys[i + 1]] + fail[keys[i + 1]]
+				rate2 := fmt.Sprintf("%.2f", 100.0*float64(success[keys[i + 1]])/float64(total2))
+				tbl.AddRow(keys[i], rate1, total1, "|", keys[i + 1], rate2, total2)
 			}
 			mtx.Unlock()
 
