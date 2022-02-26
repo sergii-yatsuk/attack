@@ -17,8 +17,8 @@ import (
 )
 
 var (
-	runtime     = flag.Duration("r", 1*time.Hour, "how long to run the util")
-	parallelism = flag.Int("p", 1000, "number of concurrent connections per host")
+	runtime     = flag.Duration("r", 24*time.Hour, "how long to run the util")
+	parallelism = flag.Int("p", 500, "number of concurrent connections per host")
 	timeout     = flag.Duration("t", 90*time.Second, "TCP/HTTP connectin timeouts")
 	urlsFile    = flag.String("u", "urls", "file with URLs to target")
 	debug       = flag.Bool("d", false, "debug mode")
@@ -108,7 +108,7 @@ func report(ctx context.Context, wg *sync.WaitGroup) {
 			wg.Done()
 			return
 		default:
-			time.Sleep(2 * time.Second)
+			time.Sleep(10 * time.Second)
 			fmt.Print("\033[H\033[2J")
 			mtx.Lock()
 			tbl := table.New("URL", "Success rate (%)", "# of requests")
