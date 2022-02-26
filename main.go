@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"flag"
@@ -19,7 +20,7 @@ var (
 	runtime     = flag.Duration("r", 1*time.Hour, "how long to run the util")
 	parallelism = flag.Int("p", 1000, "number of concurrent connections per host")
 	timeout     = flag.Duration("t", 90*time.Second, "TCP/HTTP connectin timeouts")
-	urls        = flag.String("u", "urls", "file with URLs to target")
+	urlsFile    = flag.String("u", "urls", "file with URLs to target")
 	debug       = flag.Bool("d", false, "debug mode")
 )
 
@@ -132,23 +133,17 @@ func report(ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-var addresses = []string{
-	"https://lenta.ru",
-	"https://ria.ru",
-	"https://ria.ru/lenta",
-	"https://www.rbc.ru",
-	"https://www.rt.com",
-	"http://kremlin.ru",
-	"http://en.kremlin.ru",
-	"https://smotrim.ru",
-	"https://tass.ru",
-	"https://tvzvezda.ru",
-	"https://vsoloviev.ru",
-	"https://www.1tv.ru",
-	"https://www.vesti.ru",
-	"https://online.sberbank.ru",
-	"https://sberbank.ru",
-	"https://zakupki.gov.ru",
+func readUrls() []string {
+	f, err := os.Open(*urlsFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "can't open file: %e", err)
+	}
+	sc := bufio.NewScanner(f)
+	urls := make([]string, 0)
+	for sc.Scan() {
+		urls = append(urls, sc.Text())
+	}
+	return urls
 }
 
 func main() {
@@ -175,9 +170,9 @@ func main() {
 	wg := &sync.WaitGroup{}
 	defer wg.Wait()
 	wg.Add(1)
-	for _, a := range addresses {
-		x := probe(ctx, wg, a, *parallelism)
-		wg.Add(x)
+	urls := readUrls()
+	for _, u := range urls {
+		wg.Add(probe(ctx, wg, u, *parallelism))
 	}
 	go report(ctx, wg)
 	time.Sleep(*runtime)
